@@ -413,39 +413,39 @@ public class App {
 		processEyesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("processed");
-				int r = pickedColor.getRed();
-				int g = pickedColor.getGreen();
-				int b = pickedColor.getBlue();
-				float[] hsv1 = Color.RGBtoHSB(r, g, b, null);
-				float[] hsv2 = RGB2HSV(r, g, b);
-				System.out.println("hsv1 h=" + hsv1[0] + " s=" + hsv1[1] + " v=" + hsv1[2]);
-				System.out.println("hsv2 h=" + hsv2[0] + " s=" + hsv2[1] + " v=" + hsv2[2]);
-				int[] iRGB = HSV2RGB(hsv1[0], hsv1[1], hsv1[2]);
-				System.out.println("rgb r=" + r + " g=" + g + " b=" + b);
-				System.out.println("iRGB r=" + iRGB[0] + " g=" + iRGB[1] + " b=" + iRGB[2]);
-				int[] iRGB2 = HSV2RGB2(hsv1[0], hsv1[1], hsv1[2]);
-				System.out.println("iRGB2 r=" + iRGB2[0] + " g=" + iRGB2[1] + " b=" + iRGB2[2]);
-				Color c = Color.getHSBColor(hsv1[0], hsv1[1], hsv1[2]);
-				System.out.println("iRGB3 r=" + c.getRed() + " g=" + c.getGreen() + " b=" + c.getBlue());
-//				
-//				float gMin = (float)0.17;
-//				float gMax = (float)0.47;
-//
-//				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
-//				imgProcessed.setData(imgOriginal.getData());
-//				Iterator itr = eyeLocations.iterator();
-//				while(itr.hasNext()){
-//					EyeLocation eye =(EyeLocation)itr.next();
-//
-//				for(int i = eye.x; i < eye.x + eye.width; i++){
-//					for(int j = eye.y; j < eye.y + eye.height; j++){
-//						int intColor = imgOriginal.getRGB(i, j);
-//				        int b = intColor & 0x000000FF;
-//				        int g = (intColor & 0x0000FF00) >> 8;
-//				        int r = (intColor & 0x00FF0000) >> 16;
-//				        int rNew;
-//				        //System.out.print("intColor="+ intColor + " r="+r+" g="+g+" b="+b);
-//				        float[] hsv2 = RGB2HSV(r, g, b);
+//				int r = pickedColor.getRed();
+//				int g = pickedColor.getGreen();
+//				int b = pickedColor.getBlue();
+//				float[] hsv1 = Color.RGBtoHSB(r, g, b, null);
+//				float[] hsv2 = RGB2HSV(r, g, b);
+//				System.out.println("hsv1 h=" + hsv1[0] + " s=" + hsv1[1] + " v=" + hsv1[2]);
+//				System.out.println("hsv2 h=" + hsv2[0] + " s=" + hsv2[1] + " v=" + hsv2[2]);
+//				int[] iRGB = HSV2RGB(hsv1[0], hsv1[1], hsv1[2]);
+//				System.out.println("rgb r=" + r + " g=" + g + " b=" + b);
+//				System.out.println("iRGB r=" + iRGB[0] + " g=" + iRGB[1] + " b=" + iRGB[2]);
+//				int[] iRGB2 = HSV2RGB2(hsv1[0], hsv1[1], hsv1[2]);
+//				System.out.println("iRGB2 r=" + iRGB2[0] + " g=" + iRGB2[1] + " b=" + iRGB2[2]);
+//				Color c = Color.getHSBColor(hsv1[0], hsv1[1], hsv1[2]);
+//				System.out.println("iRGB3 r=" + c.getRed() + " g=" + c.getGreen() + " b=" + c.getBlue());
+				
+				float gMin = (float)0.17;
+				float gMax = (float)0.47;
+
+				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
+				imgProcessed.setData(imgOriginal.getData());
+				Iterator itr = eyeLocations.iterator();
+				while(itr.hasNext()){
+					EyeLocation eye =(EyeLocation)itr.next();
+
+				for(int i = eye.x; i < eye.x + eye.width; i++){
+					for(int j = eye.y; j < eye.y + eye.height; j++){
+						int intColor = imgOriginal.getRGB(i, j);
+				        int b = intColor & 0x000000FF;
+				        int g = (intColor & 0x0000FF00) >> 8;
+				        int r = (intColor & 0x00FF0000) >> 16;
+				        int rNew, gNew, bNew;
+				        //System.out.print("intColor="+ intColor + " r="+r+" g="+g+" b="+b);
+//				        ///////////////red
 //						if((r > 1.8*g) && (r>b) && (b>10) && (r>40))
 //							rNew = Math.round((g+b)/2);
 //						else
@@ -455,81 +455,37 @@ public class App {
 //						int tmp = rNew << 16;
 //						Color newColor = new Color(rNew,g,b);
 //						int newIntColor = newColor.getRGB();
-//						//System.out.print("newColor="+ newColor + " r="+rNew+" g="+g+" b="+b);
-//						if (newIntColor!=newIntColor1) System.out.println("newIntColor="+ newIntColor + "  newIntColor1="+newIntColor1);
-//						imgProcessed.setRGB(i,j,newIntColor);
-//					}
-//				}
-//				}
-//				processedImage = new RedeyeReduction(imgProcessed,offsetX,offsetY,false, eyeLocations);
-//				processedArea.removeAll();
-//				processedArea.add(processedImage);
-//				saveImageButton.setEnabled(true);
-//				displayImages();
+//						/////////////////////////////////
+						//System.out.print("newColor="+ newColor + " r="+rNew+" g="+g+" b="+b);
+						/////////////green
+						float[] hsv = RGB2HSV(r, g, b);
+						if (hsv[0] > 0.17 && hsv[0] <0.47){
+							//gNew = Math.round((r+b)/2);
+							gNew = 5;
+							rNew = 5;
+							bNew = 5;
+						}else{ 
+							gNew = g;
+							rNew = r;
+							bNew = b;
+						}
+						Color newColorGreen = new Color(rNew,gNew,bNew);
+						int newIntColor = newColorGreen.getRGB();	
+						/////////////////////////
+						imgProcessed.setRGB(i,j,newIntColor);
+					}
+				}
+				}
+				processedImage = new RedeyeReduction(imgProcessed,offsetX,offsetY,false, eyeLocations);
+				processedArea.removeAll();
+				processedArea.add(processedImage);
+				saveImageButton.setEnabled(true);
+				displayImages();
 			}
 		});
 	}//initUI
-    public static int[] HSV2RGB3(float h, float s, float v)
-    {
-        // H is given on [0->6] or -1. S and V are given on [0->1].
-        // RGB are each returned on [0->1].
-        float m, n, f;
-        int i;
-        float[] hsv = new float[3];
-        float[] rgb = new float[3];
-        hsv[0] = h;
-        hsv[1] = s;
-        hsv[2] = v;
-        if (hsv[0] == -1)
-        {
-            rgb[0] = rgb[1] = rgb[2] = hsv[2];
-            return new int[]{Math.round(rgb[0]*255),Math.round(rgb[1]*255),Math.round(rgb[2]*255)};
-        }
-        i = (int) (Math.floor(hsv[0]));
-        f = hsv[0] - i;
-        if (i % 2 == 0)
-        {
-            f = 1 - f; // if i is even
-        }
-        m = hsv[2] * (1 - hsv[1]);
-        n = hsv[2] * (1 - hsv[1] * f);
-        switch (i)
-        {
-            case 6:
-            case 0:
-                rgb[0] = hsv[2];
-                rgb[1] = n;
-                rgb[2] = m;
-                break;
-            case 1:
-                rgb[0] = n;
-                rgb[1] = hsv[2];
-                rgb[2] = m;
-                break;
-            case 2:
-                rgb[0] = m;
-                rgb[1] = hsv[2];
-                rgb[2] = n;
-                break;
-            case 3:
-                rgb[0] = m;
-                rgb[1] = n;
-                rgb[2] = hsv[2];
-                break;
-            case 4:
-                rgb[0] = n;
-                rgb[1] = m;
-                rgb[2] = hsv[2];
-                break;
-            case 5:
-                rgb[0] = hsv[2];
-                rgb[1] = m;
-                rgb[2] = n;
-                break;
-        }
-        return new int[]{Math.round(rgb[0]*255),Math.round(rgb[1]*255),Math.round(rgb[2]*255)};
-    }
-	public static int[] HSV2RGB2(float h, float s, float v )
+   
+	public static int[] HSV2RGB(float h, float s, float v )
 	{
 		float r,g,b;
 		int i;
@@ -584,57 +540,7 @@ public class App {
 
 		return new int[]{Math.round(r0*255),Math.round(g0*255),Math.round(b0*255)};
 	}
-	public static int[] HSV2RGB(float h, float s, float v )
-	{
-		float r,g,b;
-		int i;
-		float f, p, q, t;
-		if( s == 0 ) {
-			// achromatic (grey)
-			r = g = b = v;;
-			
-		}else{
-		h /= 60;			// sector 0 to 5
-		i = Math.round( h - (float)0.5 );
-		f = h - i;			// factorial part of h
-		p = v * ( 1 - s );
-		q = v * ( 1 - s * f );
-		t = v * ( 1 - s * ( 1 - f ) );
-		switch( i ) {
-			case 0:
-				r = v;
-				g = t;
-				b = p;
-				break;
-			case 1:
-				r = q;
-				g = v;
-				b = p;
-				break;
-			case 2:
-				r = p;
-				g = v;
-				b = t;
-				break;
-			case 3:
-				r = p;
-				g = q;
-				b = v;
-				break;
-			case 4:
-				r = t;
-				g = p;
-				b = v;
-				break;
-			default:		// case 5:
-				r = v;
-				g = p;
-				b = q;
-				break;
-		}
-		}
-		return new int[]{Math.round(r*255),Math.round(g*255),Math.round(b*255)};
-	}
+	
 	public static float[] RGB2HSV(int ir, int ig, int ib){
 
 		float r = (float)ir;

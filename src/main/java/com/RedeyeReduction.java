@@ -26,6 +26,7 @@ public class RedeyeReduction extends Component {
 			Iterator itr = eyeLocations.iterator();
 			while(itr.hasNext()){
 				EyeLocation eye =(EyeLocation)itr.next();
+				g.setColor(new Color(255,0,0));
 				g.drawRect(eye.x + offsetX, eye.y + offsetY, eye.width, eye.height);
 			}
 
