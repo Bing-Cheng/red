@@ -46,7 +46,9 @@ public class App {
 	static JPanel originalArea;
 	static Container content;
 	static JButton openButton;
-	static JButton processEyesButton;
+	static JButton processRedEyesButton;
+	static JButton processGreenEyesButton;
+	static JButton processWhiteEyesButton;
 	static JButton pickEyesButton;
 	static JButton pickColorButton;
 	static JButton moveButton;
@@ -64,6 +66,7 @@ public class App {
 	static JPanel listPanel;
 	static JPanel buttonsPanel;
 	static JCheckBox fromImage;
+	static JCheckBox hsvHist;
 	static Color defaultButtonColor;
 	static DefaultListModel model;
 	static MouseEvent mouseEvent;
@@ -74,14 +77,19 @@ public class App {
 	static int startY;
 	static RedeyeReduction originalImage;
 	static RedeyeReduction processedImage;
+	static Histogram redHist;
+	static Histogram greenHist;
+	static Histogram blueHist;
 	static ArrayList<EyeLocation> eyeLocations;
 	static Boolean locPicked;
 	static EyeLocation eyeLoc;
 	static Color pickedColor;
+	static JPanel infoPanel;
 
 	private void initParams() { 
 		locPicked = false;
 		eyeLocations = new ArrayList<EyeLocation>();
+		System.out.println(eyeLocations.isEmpty());
 		offsetX = 0;
 		offsetY = 0;
 		startX = 0;
@@ -106,14 +114,19 @@ public class App {
 		saveImageButton = new JButton("Save Image");
 		compareImageButton = new JButton("Compare Image");
 		defaultButtonColor = pickEyesButton.getBackground();
-		processEyesButton = new JButton("Process Eyes");
+		processRedEyesButton = new JButton("Red Eyes");
+		processGreenEyesButton = new JButton("Green Eyes");
+		processWhiteEyesButton = new JButton("White Eyes");
 		fromImage = new JCheckBox("Choose from image");
+		hsvHist = new JCheckBox("HSV Histogram");
 		pickEyesButton.setEnabled(false);
-		//pickColorButton.setEnabled(false);
+		pickColorButton.setEnabled(false);
 		clearButton.setEnabled(false);
 		moveButton.setEnabled(false);
 		saveImageButton.setEnabled(false);
-		//processEyesButton.setEnabled(false);
+		processRedEyesButton.setEnabled(false);
+		processGreenEyesButton.setEnabled(false);
+		processWhiteEyesButton.setEnabled(false);
 		fromImage.setEnabled(false);
 		colorLabel = new JLabel();
 		colorLabel.setMaximumSize(new Dimension(30,30));
@@ -121,20 +134,31 @@ public class App {
 		colorLabel.setBorder(border);
 		colorLabel.setBackground(Color.white);
 		buttonsPanel = new JPanel();
-		buttonsPanel.setSize(800,100);
+	//	buttonsPanel.setSize(800,100);
 		buttonsPanel.setBackground(Color.white);
-		GridLayout bLayout = new GridLayout(2,4,25,30);
+		GridLayout bLayout = new GridLayout(3,4,50,5);
 		buttonsPanel.setLayout(bLayout);
 		buttonsPanel.add(openButton);
-		buttonsPanel.add(saveImageButton);
-		buttonsPanel.add(pickEyesButton);
-		buttonsPanel.add(pickColorButton);
-		buttonsPanel.add(colorLabel);
-		buttonsPanel.add(compareImageButton);
-		buttonsPanel.add(clearButton);
 		buttonsPanel.add(moveButton);
-		buttonsPanel.add(processEyesButton);
+		buttonsPanel.add(processRedEyesButton);
+		buttonsPanel.add(pickColorButton);
+		buttonsPanel.add(compareImageButton);
+		buttonsPanel.add(pickEyesButton);
+		buttonsPanel.add(processGreenEyesButton);
+		buttonsPanel.add(colorLabel);
+		buttonsPanel.add(saveImageButton);
+		buttonsPanel.add(clearButton);
+		buttonsPanel.add(processWhiteEyesButton);
 		buttonsPanel.add(fromImage);
+		redHist = new Histogram(Color.RED);
+		greenHist = new Histogram(Color.GREEN);
+		blueHist = new Histogram(Color.BLUE);
+		redHist.setBackground(Color.WHITE);
+		redHist.setBorder(border);
+		redHist.setPreferredSize(new Dimension(128, 80));
+		//greenHist.setPreferredSize(new Dimension(128, 100));
+		//blueHist.setPreferredSize(new Dimension(128, 100));
+		infoPanel = new JPanel();
 		originalArea = new JPanel();
 		originalArea.setPreferredSize(new Dimension(800, 600));
 		processedArea = new JPanel();
@@ -146,12 +170,20 @@ public class App {
 		listPanel = new JPanel();
 		listPanel.setBackground(Color.white);
 		Border listPanelBorder = BorderFactory.createTitledBorder("Eye Locations");
-		listPanel.setBorder(listPanelBorder);
+		//listPanel.setBorder(listPanelBorder);
 		listPanel.add(listPane);
 		layout = new GroupLayout(content);
 		content.setLayout(layout);
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
+		GridLayout iLayout = new GridLayout(0,4);
+		infoPanel.setLayout(new FlowLayout(FlowLayout.LEADING,2,0));
+		infoPanel.setBackground(Color.WHITE);
+		infoPanel.add(listPane);
+		infoPanel.add(redHist);
+		infoPanel.add(greenHist);
+		infoPanel.add(blueHist);
+		infoPanel.add(hsvHist);
 	}
 
 	public class MouseMotionEvent implements MouseMotionListener {
@@ -197,6 +229,9 @@ public class App {
 				Color bg = new Color(rgb);
 				colorLabel.setBackground(bg);
 				pickedColor = bg;
+				System.out.println("r="+bg.getRed()+" g="+bg.getGreen()+" b="+bg.getBlue());
+				float[] hsv = RGB2HSV(bg.getRed(),bg.getGreen(),bg.getBlue());
+				System.out.println("h="+hsv[0]+" s="+hsv[1]+" v="+hsv[2]);
 			}
 		}
 
@@ -215,8 +250,82 @@ public class App {
 		public void mouseReleased(java.awt.event.MouseEvent e) {
 			// TODO Auto-generated method stub
 			System.out.println("mouseReleased");
-			if (pickEye)
-				model.addElement((model.getSize()+1) + ". Eye location: x = " + eyeLoc.x + ";  y = " + eyeLoc.y + ";  width = " + eyeLoc.width + ";  height = " + eyeLoc.height);
+			if (pickEye){
+				model.addElement("x = " + eyeLoc.x + ";  y = " + eyeLoc.y + ";  w = " + eyeLoc.width + ";  h = " + eyeLoc.height);
+				if (eyeLoc.width>0 && eyeLoc.height >0){
+					int scale = 1000;
+					if (hsvHist.isSelected()){
+					int[] hHist = new int[128];
+					int[] sHist = new int[128];
+					int[] vHist = new int[128];
+
+					for(int i = eyeLoc.x; i < eyeLoc.x + eyeLoc.width; i++){
+						for(int j = eyeLoc.y; j < eyeLoc.y + eyeLoc.height; j++){
+							int intColor = imgOriginal.getRGB(i, j);
+							int b = intColor & 0x000000FF;
+							int g = (intColor & 0x0000FF00) >> 8;
+							int r = (intColor & 0x00FF0000) >> 16;
+							float[] hsv = RGB2HSV(r,g,b);
+							int h = Math.round(hsv[0]*127);
+							int s = Math.round(hsv[1]*127);
+							int v = Math.round(hsv[2]*127);
+							hHist[h]++;
+							sHist[s]++;
+							vHist[v]++;
+						}
+					}
+					int[] HistPointsX = new int[128];
+					for(int k = 0; k <128; k++)
+					{
+						HistPointsX[k] = k;
+						hHist[k] = scale * hHist[k]/(eyeLoc.width*eyeLoc.height);
+						sHist[k] = scale * sHist[k]/(eyeLoc.width*eyeLoc.height);
+						vHist[k] = scale * vHist[k]/(eyeLoc.width*eyeLoc.height);
+
+					}
+					redHist.drawHist(HistPointsX,hHist);
+					greenHist.drawHist(HistPointsX,sHist);
+					blueHist.drawHist(HistPointsX,vHist);
+					redHist.repaint();
+					greenHist.repaint();
+					blueHist.repaint();
+					}else{
+						int[] rHist = new int[256];
+						int[] gHist = new int[256];
+						int[] bHist = new int[256];
+
+						for(int i = eyeLoc.x; i < eyeLoc.x + eyeLoc.width; i++){
+							for(int j = eyeLoc.y; j < eyeLoc.y + eyeLoc.height; j++){
+								int intColor = imgOriginal.getRGB(i, j);
+								int b = intColor & 0x000000FF;
+								int g = (intColor & 0x0000FF00) >> 8;
+								int r = (intColor & 0x00FF0000) >> 16;
+								rHist[r]++;
+								gHist[g]++;
+								bHist[b]++;
+							}
+						}
+						int[] HistPointsX = new int[128];
+						int[] rHistPointsY = new int[128];
+						int[] gHistPointsY = new int[128];
+						int[] bHistPointsY = new int[128];
+						for(int k = 0; k <128; k++)
+						{
+							HistPointsX[k] = k;
+							rHistPointsY[k] = scale * (rHist[2*k]+rHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+							gHistPointsY[k] = scale * (gHist[2*k]+gHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+							bHistPointsY[k] = scale * (bHist[2*k]+bHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+
+						}
+						redHist.drawHist(HistPointsX,rHistPointsY);
+						greenHist.drawHist(HistPointsX,gHistPointsY);
+						blueHist.drawHist(HistPointsX,bHistPointsY);
+						redHist.repaint();
+						greenHist.repaint();
+						blueHist.repaint();						
+					}
+				}//if width>0
+			}//if picked eye
 		}
 
 		public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -255,7 +364,9 @@ public class App {
 					clearButton.setEnabled(true);
 					moveButton.setEnabled(true);
 					saveImageButton.setEnabled(false);
-					processEyesButton.setEnabled(true);
+					processRedEyesButton.setEnabled(true);
+					processGreenEyesButton.setEnabled(true);
+					processWhiteEyesButton.setEnabled(true);
 					fromImage.setEnabled(true);
 					try {
 						imgOriginal = ImageIO.read(file);
@@ -296,7 +407,7 @@ public class App {
 				clearButton.setEnabled(false);
 				moveButton.setEnabled(true);
 				saveImageButton.setEnabled(false);
-				processEyesButton.setEnabled(false);
+				processRedEyesButton.setEnabled(false);
 				fromImage.setEnabled(false);
 				JFileChooser openFile1 = new JFileChooser();
 				JFileChooser openFile2 = new JFileChooser();
@@ -410,27 +521,152 @@ public class App {
 				originalImage.repaint();
 			}
 		});
-		processEyesButton.addActionListener(new ActionListener() {
+		hsvHist.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("processed");
-//				int r = pickedColor.getRed();
-//				int g = pickedColor.getGreen();
-//				int b = pickedColor.getBlue();
-//				float[] hsv1 = Color.RGBtoHSB(r, g, b, null);
-//				float[] hsv2 = RGB2HSV(r, g, b);
-//				System.out.println("hsv1 h=" + hsv1[0] + " s=" + hsv1[1] + " v=" + hsv1[2]);
-//				System.out.println("hsv2 h=" + hsv2[0] + " s=" + hsv2[1] + " v=" + hsv2[2]);
-//				int[] iRGB = HSV2RGB(hsv1[0], hsv1[1], hsv1[2]);
-//				System.out.println("rgb r=" + r + " g=" + g + " b=" + b);
-//				System.out.println("iRGB r=" + iRGB[0] + " g=" + iRGB[1] + " b=" + iRGB[2]);
-//				int[] iRGB2 = HSV2RGB2(hsv1[0], hsv1[1], hsv1[2]);
-//				System.out.println("iRGB2 r=" + iRGB2[0] + " g=" + iRGB2[1] + " b=" + iRGB2[2]);
-//				Color c = Color.getHSBColor(hsv1[0], hsv1[1], hsv1[2]);
-//				System.out.println("iRGB3 r=" + c.getRed() + " g=" + c.getGreen() + " b=" + c.getBlue());
-				
-				float gMin = (float)0.17;
-				float gMax = (float)0.47;
+				System.out.println("hsvHist pressed");
+				if (!eyeLocations.isEmpty()){
+					//EyeLocation eyeLoc = eyeLocations.get(eyeLocations.size()-1);
+					if(eyeLoc.width>0 && eyeLoc.height>0){
+						int scale = 1000;
+						if (hsvHist.isSelected()){
+						int[] hHist = new int[128];
+						int[] sHist = new int[128];
+						int[] vHist = new int[128];
 
+						for(int i = eyeLoc.x; i < eyeLoc.x + eyeLoc.width; i++){
+							for(int j = eyeLoc.y; j < eyeLoc.y + eyeLoc.height; j++){
+								int intColor = imgOriginal.getRGB(i, j);
+								int b = intColor & 0x000000FF;
+								int g = (intColor & 0x0000FF00) >> 8;
+								int r = (intColor & 0x00FF0000) >> 16;
+								float[] hsv = RGB2HSV(r,g,b);
+								int h = Math.round(hsv[0]*127);
+								int s = Math.round(hsv[1]*127);
+								int v = Math.round(hsv[2]*127);
+								hHist[h]++;
+								sHist[s]++;
+								vHist[v]++;
+							}
+						}
+						int[] HistPointsX = new int[128];
+						for(int k = 0; k <128; k++)
+						{
+							HistPointsX[k] = k;
+							hHist[k] = scale * hHist[k]/(eyeLoc.width*eyeLoc.height);
+							sHist[k] = scale * sHist[k]/(eyeLoc.width*eyeLoc.height);
+							vHist[k] = scale * vHist[k]/(eyeLoc.width*eyeLoc.height);
+
+						}
+						redHist.drawHist(HistPointsX,hHist);
+						greenHist.drawHist(HistPointsX,sHist);
+						blueHist.drawHist(HistPointsX,vHist);
+						redHist.repaint();
+						greenHist.repaint();
+						blueHist.repaint();
+						}else{
+							int[] rHist = new int[256];
+							int[] gHist = new int[256];
+							int[] bHist = new int[256];
+
+							for(int i = eyeLoc.x; i < eyeLoc.x + eyeLoc.width; i++){
+								for(int j = eyeLoc.y; j < eyeLoc.y + eyeLoc.height; j++){
+									int intColor = imgOriginal.getRGB(i, j);
+									int b = intColor & 0x000000FF;
+									int g = (intColor & 0x0000FF00) >> 8;
+									int r = (intColor & 0x00FF0000) >> 16;
+									rHist[r]++;
+									gHist[g]++;
+									bHist[b]++;
+								}
+							}
+							int[] HistPointsX = new int[128];
+							int[] rHistPointsY = new int[128];
+							int[] gHistPointsY = new int[128];
+							int[] bHistPointsY = new int[128];
+							for(int k = 0; k <128; k++)
+							{
+								HistPointsX[k] = k;
+								rHistPointsY[k] = scale * (rHist[2*k]+rHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+								gHistPointsY[k] = scale * (gHist[2*k]+gHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+								bHistPointsY[k] = scale * (bHist[2*k]+bHist[2*k+1])/(eyeLoc.width*eyeLoc.height);
+
+							}
+							redHist.drawHist(HistPointsX,rHistPointsY);
+							greenHist.drawHist(HistPointsX,gHistPointsY);
+							blueHist.drawHist(HistPointsX,bHistPointsY);
+							redHist.repaint();
+							greenHist.repaint();
+							blueHist.repaint();						
+						}
+					}
+				}
+				
+			}
+		});
+		processWhiteEyesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("white eye processed");
+				int vTh = 300;
+				int diffTh = 150;
+				float meanMul = (float)1.1;
+				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
+				imgProcessed.setData(imgOriginal.getData());
+				Iterator itr = eyeLocations.iterator();
+				while(itr.hasNext()){
+					EyeLocation eye =(EyeLocation)itr.next();
+					int sum =0;
+					for(int i = eye.x; i < eye.x + eye.width; i++){
+						for(int j = eye.y; j < eye.y + eye.height; j++){
+							int intColor = imgOriginal.getRGB(i, j);
+					        int b = intColor & 0x000000FF;
+					        int g = (intColor & 0x0000FF00) >> 8;
+					        int r = (intColor & 0x00FF0000) >> 16;
+					        sum = sum + r + g +b;
+						}
+					}
+				int mean = sum / (eye.width * eye.height);	
+				for(int i = eye.x; i < eye.x + eye.width; i++){
+					for(int j = eye.y; j < eye.y + eye.height; j++){
+						int intColor = imgOriginal.getRGB(i, j);
+				        int b = intColor & 0x000000FF;
+				        int g = (intColor & 0x0000FF00) >> 8;
+				        int r = (intColor & 0x00FF0000) >> 16;
+				        int rNew, gNew, bNew;
+				        int diff = Math.max(Math.max(r, g),b) - Math.min(Math.min(r, g),b);
+				        float[] hsv = RGB2HSV(r, g, b);
+						if (((r + g + b) > vTh || (r + g + b) > meanMul*mean) && (diff<diffTh) ){
+							float h = hsv[0];
+							float s = 0;//hsv[1]/2;
+							float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
+							int[] rgb = HSV2RGB(h,s,v);
+							gNew = rgb[0];
+							rNew = rgb[1];
+							bNew = rgb[2];
+						}else{ 
+							gNew = g;
+							rNew = r;
+							bNew = b;
+						}
+						Color newColorGreen = new Color(rNew,gNew,bNew);
+						int newIntColor = newColorGreen.getRGB();	
+						/////////////////////////
+						imgProcessed.setRGB(i,j,newIntColor);
+					}
+				}
+				}
+				processedImage = new RedeyeReduction(imgProcessed,offsetX,offsetY,false, eyeLocations);
+				processedArea.removeAll();
+				processedArea.add(processedImage);
+				saveImageButton.setEnabled(true);
+				displayImages();
+			}
+		});
+		
+		processGreenEyesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("green eye processed");
+				float gMin = (float)0.17;
+				float gMax = (float)0.50;
 				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
 				imgProcessed.setData(imgOriginal.getData());
 				Iterator itr = eyeLocations.iterator();
@@ -444,26 +680,16 @@ public class App {
 				        int g = (intColor & 0x0000FF00) >> 8;
 				        int r = (intColor & 0x00FF0000) >> 16;
 				        int rNew, gNew, bNew;
-				        //System.out.print("intColor="+ intColor + " r="+r+" g="+g+" b="+b);
-//				        ///////////////red
-//						if((r > 1.8*g) && (r>b) && (b>10) && (r>40))
-//							rNew = Math.round((g+b)/2);
-//						else
-//							rNew = r;
-//						
-//						int newIntColor1 = (rNew << 16) + (intColor&0xFF00FFFF);
-//						int tmp = rNew << 16;
-//						Color newColor = new Color(rNew,g,b);
-//						int newIntColor = newColor.getRGB();
-//						/////////////////////////////////
-						//System.out.print("newColor="+ newColor + " r="+rNew+" g="+g+" b="+b);
-						/////////////green
-						float[] hsv = RGB2HSV(r, g, b);
-						if (hsv[0] > 0.17 && hsv[0] <0.47){
+				        float[] hsv = RGB2HSV(r, g, b);
+						if (hsv[0] > gMin && hsv[0] < gMax){
 							//gNew = Math.round((r+b)/2);
-							gNew = 5;
-							rNew = 5;
-							bNew = 5;
+							float h = hsv[0];
+							float s = 0;//hsv[1]/2;
+							float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
+							int[] rgb = HSV2RGB(h,s,v);
+							gNew = rgb[0];
+							rNew = rgb[1];
+							bNew = rgb[2];
 						}else{ 
 							gNew = g;
 							rNew = r;
@@ -471,8 +697,42 @@ public class App {
 						}
 						Color newColorGreen = new Color(rNew,gNew,bNew);
 						int newIntColor = newColorGreen.getRGB();	
-						/////////////////////////
 						imgProcessed.setRGB(i,j,newIntColor);
+					}
+				}
+				}
+				processedImage = new RedeyeReduction(imgProcessed,offsetX,offsetY,false, eyeLocations);
+				processedArea.removeAll();
+				processedArea.add(processedImage);
+				saveImageButton.setEnabled(true);
+				displayImages();
+			}
+		});
+		
+		processRedEyesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("red eye processed");
+				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
+				imgProcessed.setData(imgOriginal.getData());
+				Iterator itr = eyeLocations.iterator();
+				while(itr.hasNext()){
+					EyeLocation eye =(EyeLocation)itr.next();
+
+				for(int i = eye.x; i < eye.x + eye.width; i++){
+					for(int j = eye.y; j < eye.y + eye.height; j++){
+						int intColor = imgOriginal.getRGB(i, j);
+				        int b = intColor & 0x000000FF;
+				        int g = (intColor & 0x0000FF00) >> 8;
+				        int r = (intColor & 0x00FF0000) >> 16;
+				        int rNew, gNew, bNew;
+
+						if((r > 1.8*g) && (r>b) && (b>10) && (r>40))
+							rNew = Math.round((g+b)/2);
+						else
+							rNew = r;
+						
+						int newIntColor1 = (rNew << 16) + (intColor&0xFF00FFFF);
+						imgProcessed.setRGB(i,j,newIntColor1);
 					}
 				}
 				}
@@ -592,7 +852,7 @@ public class App {
 								GroupLayout.PREFERRED_SIZE)
 								.addComponent(originalArea))
 								.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-										.addComponent(listPane)
+										.addComponent(infoPanel)
 										.addComponent(processedArea))
 				);
 		layout.setVerticalGroup(
@@ -600,7 +860,7 @@ public class App {
 				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 						.addComponent(buttonsPanel,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
 								GroupLayout.PREFERRED_SIZE)
-								.addComponent(listPane,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+								.addComponent(infoPanel,GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
 										GroupLayout.PREFERRED_SIZE)
 						)
 						.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
