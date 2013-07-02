@@ -50,7 +50,7 @@ public class ChildFrame {
 		
 		checkBox = new JCheckBox("");
 
-		textField = new JTextField();
+		textField = new JTextField("0.2");
 		experiment1 = new JRadioButton("1");
 		experiment2 = new JRadioButton("2");
 		experiment3 = new JRadioButton("3");
@@ -145,18 +145,15 @@ public class ChildFrame {
 	}
 	void grow(BufferedImage eyePatch){//regiongrowing
 		Boolean[][] J = new Boolean[32][32];
-		float maxDist = (float)0.15;
+		float maxDist = Float.parseFloat(textField.getText());
 		float pixDist = (float)0.0;
 		int x= 15;
 		int y =15;
 		J[x][y]=true;
 		int pos=0;
 		ArrayList<Pixel> pixs = new ArrayList<Pixel>();
-		int intColor = eyePatch.getRGB(x, y);
-		int b = intColor & 0x000000FF;
-		int g = (intColor & 0x0000FF00) >> 8;
-		int r = (intColor & 0x00FF0000) >> 16;
-		float bf = (float)b/(float)256.0;
+		int intColor;
+		float fI = getPixelColor(eyePatch, x, y, ColorComponents.VALUE);
 		float pMin = 1;
 		int index = 0;
 		float regMean;
@@ -165,42 +162,34 @@ public class ChildFrame {
 				J[i][j]=false;
 			}
 		}
-		pixs.add(new Pixel(x,y,bf));
-		regMean = bf;
+		pixs.add(new Pixel(x,y,fI));
+		regMean = fI;
 		int regSize = 0;
 		while(pixDist<maxDist){
 			if(x>0 && x<pSize*2-1 && y>0 && y<pSize*2-1){
-				System.out.println("x="+x+" y="+y+" J="+J[x-1][y]+" pos="+pos+ " pixDist="+pixDist);
+				System.out.println("x="+x+" y="+y+" J="+J[x-1][y]+" pos="+pos+ " pixDist="+pixDist + " maxDist="+maxDist);
 			if (!J[x-1][y]){
-				intColor = eyePatch.getRGB(x-1, y);
-				b = intColor & 0x000000FF;
-				bf = (float)b/(float)256.0;
+				fI = getPixelColor(eyePatch, x-1, y, ColorComponents.VALUE);
 				pos++;
-				pixs.add(new Pixel(x-1,y,bf));
+				pixs.add(new Pixel(x-1,y,fI));
 				J[x-1][y] = true;
 			}
 			if (!J[x+1][y]){
-				intColor = eyePatch.getRGB(x+1, y);
-				b = intColor & 0x000000FF;
-				bf = (float)b/(float)256.0;
+				fI = getPixelColor(eyePatch, x+1, y, ColorComponents.VALUE);
 				pos++;
-				pixs.add(new Pixel(x+1,y,bf));
+				pixs.add(new Pixel(x+1,y,fI));
 				J[x+1][y] = true;
 			}
 			if (!J[x][y-1]){
-				intColor = eyePatch.getRGB(x, y-1);
-				b = intColor & 0x000000FF;
-				bf = (float)b/(float)256.0;
+				fI = getPixelColor(eyePatch, x, y-1, ColorComponents.VALUE);
 				pos++;
-				pixs.add(new Pixel(x,y-1,bf));
+				pixs.add(new Pixel(x,y-1,fI));
 				J[x][y-1] = true;
 			}
 			if (!J[x][y+1]){
-				intColor = eyePatch.getRGB(x, y+1);
-				b = intColor & 0x000000FF;
-				bf = (float)b/(float)256.0;
+				fI = getPixelColor(eyePatch, x, y+1, ColorComponents.VALUE);
 				pos++;
-				pixs.add(new Pixel(x,y+1,bf));
+				pixs.add(new Pixel(x,y+1,fI));
 				J[x][y+1] = true;
 			}
 			}
@@ -224,7 +213,7 @@ public class ChildFrame {
 		for(int i = 0; i< pSize*2; i++){
 			for(int j = 0; j< pSize*2; j++){
 				intColor = eyePatch.getRGB(i, j);
-				b = intColor & 0x000000FF;
+				int b = intColor & 0x000000FF;
 				Color newColor = new Color(b,b,b);
 				int newIntColor = newColor.getRGB();
 				Color newColor2 = new Color(255,0,0);
@@ -255,6 +244,34 @@ public class ChildFrame {
 		}//i
 		
 	}//grow
+	enum ColorComponents{
+		RED, GREEN, BLUE, HUE, SATUATION, VALUE
+	}
+	private float getPixelColor(BufferedImage eyePatch, int x, int y, ColorComponents comp) {
+		int intColor = eyePatch.getRGB(x, y);
+		int b = intColor & 0x000000FF;
+		int g = (intColor & 0x0000FF00) >> 8;
+		int r = (intColor & 0x00FF0000) >> 16;
+		float[] hsv = Util.RGB2HSV(r,g,b);
+		float fRe =0;				
+		switch(comp){
+			case RED: fRe = (float)r/(float)256.0;
+			break;
+			case GREEN: fRe = (float)g/(float)256.0;
+			break;
+			case BLUE: fRe = (float)b/(float)256.0;
+			break;
+			case HUE: fRe = hsv[0];
+			break;
+			case SATUATION: fRe = hsv[1];
+			break;
+			case VALUE: fRe = hsv[2];
+			break;
+			default: fRe = hsv[2];
+			break;
+		}
+		return fRe;
+	}
 	void Closeup() {
 		f.setVisible(false);
 		f.dispose();
