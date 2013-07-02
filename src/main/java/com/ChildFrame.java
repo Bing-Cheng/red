@@ -143,7 +143,7 @@ public class ChildFrame {
 		processedImage.setImage(imgRegion, false);
 		processedImage.repaint();
 	}
-	void grow(BufferedImage eyePatch){
+	void grow(BufferedImage eyePatch){//regiongrowing
 		Boolean[][] J = new Boolean[32][32];
 		float maxDist = (float)0.15;
 		float pixDist = (float)0.0;
