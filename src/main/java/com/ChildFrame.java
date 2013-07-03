@@ -96,7 +96,7 @@ public class ChildFrame {
 		f.setLocation(1000, 300);
 	}//init UI
 
-	public void drawRegion(Point loc) {
+	public void drawRegion(Point loc, ColorComponents comp) {
 		BufferedImage eyePatch = new BufferedImage(PATCHSIZE*2, PATCHSIZE*2, BufferedImage.TYPE_INT_RGB);
 		for(int i = 0; i < MainFrame.originalImage.getWidth(); i++){
 			for(int j = 0; j < MainFrame.originalImage.getHeight(); j++){
@@ -141,7 +141,7 @@ public class ChildFrame {
 				}//if
 			}//j
 		}//i
-		grow(eyePatch, ColorComponents.VALUE);
+		grow(eyePatch, comp);
 		processedImage.setImage(imgRegion, false);
 		processedImage.repaint();
 	}
@@ -149,8 +149,8 @@ public class ChildFrame {
 
 		int x= 15;
 		int y =15;
-		int gridx = 3;
-		int gridy = 2;
+		int gridx = 4;
+		int gridy = 0;
 		circle = new Circle(x,y,1);
 		
 		BufferedImage eyePatchSmoothed = lowPassFilter(eyePatch, comp);
@@ -316,7 +316,7 @@ public class ChildFrame {
 	}
 	ChildFrame() {
 		initUI();
-	//	f.setVisible(true);
+		//f.setVisible(true);
 	}
 
 }

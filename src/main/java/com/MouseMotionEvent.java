@@ -15,9 +15,9 @@ public class MouseMotionEvent implements MouseMotionListener {
 				MainFrame.startY = e.getY() - MainFrame.offsetY;
 				MainFrame.offsetX = MainFrame.offsetX + X;
 				MainFrame.offsetY = MainFrame.offsetY + Y;
-				MainFrame.originalImage.setParam(MainFrame.offsetX,MainFrame.offsetY,MainFrame.locPicked, MainFrame.eyeLocations);
+				MainFrame.originalImage.setParam(MainFrame.offsetX,MainFrame.offsetY,MainFrame.locPicked, MainFrame.eyeLocations,MainFrame.sEyeModes,false);
 				MainFrame.originalImage.repaint();
-				MainFrame.processedImage.setParam(MainFrame.offsetX,MainFrame.offsetY,false, MainFrame.eyeLocations);
+				MainFrame.processedImage.setParam(MainFrame.offsetX,MainFrame.offsetY,false, MainFrame.eyeLocations,MainFrame.sEyeModes,false);
 				MainFrame.processedImage.repaint();
 			}
 		}else if (MainFrame.pickEye == true) {
@@ -25,8 +25,9 @@ public class MouseMotionEvent implements MouseMotionListener {
 			int width = Math.abs(MainFrame.startX - e.getX() + MainFrame.offsetX);
 			int yMin = ((e.getY()-MainFrame.offsetY) > MainFrame.startY) ? MainFrame.startY : e.getY() - MainFrame.offsetY;
 			int height = Math.abs(MainFrame.startY - e.getY() + MainFrame.offsetY);
+
 			MainFrame.eyeLoc.set(xMin,yMin,width,height);
-			MainFrame.originalImage.setParam(MainFrame.offsetX,MainFrame.offsetY,MainFrame.locPicked, MainFrame.eyeLocations);
+			MainFrame.originalImage.setParam(MainFrame.offsetX,MainFrame.offsetY,MainFrame.locPicked, MainFrame.eyeLocations,MainFrame.sEyeModes,false);
 			MainFrame.originalImage.repaint();
 		}//pickEye
 	}

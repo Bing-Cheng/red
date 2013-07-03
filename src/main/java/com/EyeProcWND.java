@@ -29,14 +29,19 @@ public class EyeProcWND extends Component {
 		if (overlay){
 			for(int i = 0; i < eyeLocations.size(); i++){
 				EyeLocation eye =eyeLocations.get(i);
+
 				String sEyeMode = sEyeModes.get(i);
 				if(sEyeMode=="Red")
-					g.setColor(new Color(255,0,0));
+					g.setColor(Color.RED);
 				else if(sEyeMode=="Green")
-					g.setColor(new Color(0,255,0));
+					g.setColor(Color.GREEN);
+				else if(sEyeMode=="White")
+					g.setColor(Color.WHITE);
 				else
-					g.setColor(new Color(255,255,255));
+					g.setColor(Color.BLACK);
+				
 				if (circleOn){
+
 					Circle cir = circles.get(i); 
 					ArrayList<Pixel> boundary = cir.getBoundary();
 					int x = eye.x + offsetX-ChildFrame.PATCHSIZE;
@@ -62,11 +67,13 @@ public class EyeProcWND extends Component {
 		this.eyeLocations = eyeLocations;
 	}
 
-	void setParam(int x, int y, boolean overlay, ArrayList<EyeLocation> eyeLocations) {
+	void setParam(int x, int y, boolean overlay, ArrayList<EyeLocation> eyeLocations, ArrayList<String> sEyeModes, boolean circleOn) {
 		this.offsetX = x;
 		this.offsetY = y;
 		this.overlay = overlay;
 		this.eyeLocations = eyeLocations;
+		this.circleOn = circleOn;
+		this.sEyeModes = sEyeModes;
 	}
 	
 	void setCircle(ArrayList<Circle> circles, boolean circleOn, boolean overlay, ArrayList<String> sEyeModes) {
