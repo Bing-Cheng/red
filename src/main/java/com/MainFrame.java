@@ -61,8 +61,11 @@ public class MainFrame {
 	static HistogramWND greenHist;
 	static HistogramWND blueHist;
 	static ArrayList<EyeLocation> eyeLocations;
+	static ArrayList<Circle> circles;
+	static ArrayList<String> sEyeModes;
 	static boolean locPicked;
 	static EyeLocation eyeLoc;
+	static Circle cirLoc;
 	static Color pickedColor;
 	static JPanel infoPanel;
 	static boolean saveOn;
@@ -73,7 +76,9 @@ public class MainFrame {
 		locPicked = false;
 		saveOn = false;
 		eyeLocations = new ArrayList<EyeLocation>();
-		System.out.println(eyeLocations.isEmpty());
+		circles = new ArrayList<Circle>();
+		sEyeModes = new ArrayList<String>();
+		//System.out.println(eyeLocations.isEmpty());
 		offsetX = 0;
 		offsetY = 0;
 		startX = 0;
@@ -97,14 +102,14 @@ public class MainFrame {
 		pickColorButton = new JButton("Pick Color");
 		clearButton = new JButton("Clear List");
 		moveButton = new JButton("Move Image");
-		regionGrowButton = new JButton("Region Grow");
+		regionGrowButton = new JButton("Click Eyes");
 		compareImageButton = new JButton("Compare Image");
 		processRedEyesButton = new JButton("Red Eyes");
 		processGreenEyesButton = new JButton("Green Eyes");
 		processWhiteEyesButton = new JButton("White Eyes");
 		fromImage = new JCheckBox("Choose from image");
 		colorLabel = new JLabel();
-		detectButton = new JButton("Detect Eye Mode");
+		detectButton = new JButton("Process All");
 		textField = new JTextField();
 		experiment1 = new JRadioButton("1");
 		experiment2 = new JRadioButton("2");
@@ -195,6 +200,8 @@ public class MainFrame {
 				System.out.println("open pressed");
 				locPicked = false;
 				eyeLocations.clear();
+				circles.clear();
+				sEyeModes.clear();
 				model.removeAllElements();
 				offsetX = 0;
 				offsetY = 0;
@@ -261,6 +268,8 @@ public class MainFrame {
 				}else{
 				locPicked = false;
 				eyeLocations.clear();
+				circles.clear();
+				sEyeModes.clear();
 				model.removeAllElements();
 				offsetX = 0;
 				offsetY = 0;
@@ -329,8 +338,8 @@ public class MainFrame {
 					regionGrowOn = true;
 					regionGrowButton.setBackground(defaultButtonColor.brighter());
 					child = new ChildFrame();
-					f.setSize(new Dimension(900,800));
-					f.repaint();
+				//	f.setSize(new Dimension(900,800));
+					//f.repaint();
 				}
 
 			}
@@ -395,46 +404,81 @@ public class MainFrame {
 			public void actionPerformed(ActionEvent e) {
 				model.removeAllElements();
 				eyeLocations.clear();
-				originalImage.setParam(offsetX,offsetY,locPicked, eyeLocations);
+				circles.clear();
+				sEyeModes.clear();
+				originalImage.setParam(offsetX,offsetY,false, eyeLocations);
 				originalImage.repaint();
 			}
 		});
 		detectButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				StringBuilder eyeMode = new StringBuilder();
-				Iterator itr = eyeLocations.iterator();
-				while(itr.hasNext()){
-					EyeLocation eye =(EyeLocation)itr.next();
-					int rMax = 0;
-					int gMax = 0;
-					float h = 0;
-					float s = 0;
-					float v = 0;
-					int x=0,y=0;
-					for(int i = eye.x; i < eye.x + eye.width; i++){
-						for(int j = eye.y; j < eye.y + eye.height; j++){
-							int intColor = imgOriginal.getRGB(i, j);
+				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
+				imgProcessed.setData(imgOriginal.getData());
+				for(int itr = 0; itr < eyeLocations.size(); itr++){
+					EyeLocation eye =eyeLocations.get(itr);
+					Circle circle = circles.get(itr);
+					String sEyeMode = sEyeModes.get(itr);
+					boolean[][] mask = circle.getMask();
+					int sum =0;
+					int mSize = 0;
+					for(int i = 0; i < ChildFrame.PATCHSIZE*2; i++){
+						for(int j = 0; j < ChildFrame.PATCHSIZE*2; j++){
+							if(mask[i][j]){
+								int intColor = imgOriginal.getRGB(eye.x-ChildFrame.PATCHSIZE+i, eye.y-ChildFrame.PATCHSIZE+j);
+								int b = intColor & 0x000000FF;
+								int g = (intColor & 0x0000FF00) >> 8;
+								int r = (intColor & 0x00FF0000) >> 16;
+								sum = sum + r + g +b;
+								mSize++;
+							}
+						}
+					}
+					int mean = sum / mSize;	
+					int rNew=0, gNew=0, bNew=0;	
+					for(int i = 0; i < ChildFrame.PATCHSIZE*2; i++){
+						for(int j = 0; j < ChildFrame.PATCHSIZE*2; j++){
+							if(mask[i][j]){
+								int ii = eye.x-ChildFrame.PATCHSIZE+i;
+								int jj = eye.y-ChildFrame.PATCHSIZE+j;
+							int intColor = imgOriginal.getRGB(ii,jj );
 							int b = intColor & 0x000000FF;
 							int g = (intColor & 0x0000FF00) >> 8;
 							int r = (intColor & 0x00FF0000) >> 16;
-							float[] hsv = Util.RGB2HSV(r,g,b);
-							if(rMax < r) rMax = r;
-							if(gMax < g) gMax = g;
-							h += hsv[0];
-							s += hsv[1];
-							v += hsv[2];
-						}
-					}
-					s = s/(eye.width*eye.height);
-					v = v/(eye.width*eye.height);
-					System.out.println("s= "+s+" rMax="+rMax+" gMax="+gMax+" x= "+x+" h="+h+" v="+v);
-					if (s<0.3 || h <10) eyeMode.append("w, ");
-					else if(rMax > gMax) eyeMode.append("r, ");
-					else eyeMode.append("g, ");
-				}
-				textField.setText(eyeMode.toString());
-			}
-		});
+							float[] hsv;
+							if (sEyeMode=="Red"){
+								if((r > 1.8*g) && (r>b) && (b>10) && (r>40)){
+									rNew = Math.round((g+b)/2);
+									gNew = g;
+									bNew = b;
+								}else{
+									rNew = r;
+									gNew = g;
+									bNew = b;
+								}
+							}else{
+								hsv = Util.RGB2HSV(r, g, b);
+								float h = hsv[0];
+								float s = 0;//hsv[1]/2;
+								float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
+								int[] rgb = Util.HSV2RGB(h,s,v);
+								rNew = rgb[0];
+								gNew = rgb[1];
+								bNew = rgb[2];
+							}
+							Color newColor = new Color(rNew,gNew,bNew);
+							int newIntColor = newColor.getRGB();	
+							imgProcessed.setRGB(ii,jj,newIntColor);
+							}//if mask
+						}//j
+					}//i
+				}//iterator
+				processedImage.setImage(imgProcessed,false);
+				processedImage.repaint();
+				displayImages();	
+				saveOn =true;
+				compareImageButton.setText("Save Image");
+			}//actionPerformed
+		});//ActionListener
 		hsvHist.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("hsvHist pressed");
@@ -551,6 +595,37 @@ public class MainFrame {
 				);
 	}
 
+	static int detectEyeModes(int x,int y){
+		int rMax = 0;
+		int gMax = 0;
+		float h = 0;
+		float s = 0;
+		float v = 0;
+ int iEyeMode;
+ int wSize = 3;
+		for(int i = x-wSize; i < x+wSize+1; i++){
+			for(int j = y-wSize; j < y+wSize+1; j++){
+				int intColor = imgOriginal.getRGB(i, j);
+				int b = intColor & 0x000000FF;
+				int g = (intColor & 0x0000FF00) >> 8;
+				int r = (intColor & 0x00FF0000) >> 16;
+				float[] hsv = Util.RGB2HSV(r,g,b);
+				if(rMax < r) rMax = r;
+				if(gMax < g) gMax = g;
+				h += hsv[0];
+				s += hsv[1];
+				v += hsv[2];
+			}
+		}
+		h= h/((wSize*2+1)*(wSize*2+1));
+		s = s/((wSize*2+1)*(wSize*2+1));
+		v = v/((wSize*2+1)*(wSize*2+1));
+		System.out.println("s= "+s+" rMax="+rMax+" gMax="+gMax+" x= "+x+" h="+h+" v="+v);
+		if (s<0.3 || h <0.15) iEyeMode = 0 ;
+		else if(rMax > gMax) iEyeMode = 1;
+		else iEyeMode = 2;
+		return iEyeMode;
+	}
 	MainFrame() {
 		initParams();
 		initUI();

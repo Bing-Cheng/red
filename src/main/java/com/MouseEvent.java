@@ -9,7 +9,36 @@ public class MouseEvent implements MouseListener {
 	public void mouseClicked(java.awt.event.MouseEvent e) {
 		System.out.println("mouseClicked");
 		if (MainFrame.regionGrowOn){
-			MainFrame.child.drawRegion(new Point(e.getX(),e.getY()));
+			int x = e.getX() - MainFrame.offsetX;
+			int y = e.getY() - MainFrame.offsetY;
+			int iEyeMode = MainFrame.detectEyeModes(x,y);
+			MainFrame.child.drawRegion(new Point(x,y));
+			MainFrame.eyeLoc = new EyeLocation(x,y,0,0);
+			MainFrame.cirLoc = new Circle(MainFrame.child.circle.ix, MainFrame.child.circle.iy, MainFrame.child.circle.ir);
+			if(!MainFrame.eyeLocations.isEmpty()){
+				for (int i = 0; i < MainFrame.eyeLocations.size(); i++){
+					int oldx = MainFrame.eyeLocations.get(i).x;
+					int oldy = MainFrame.eyeLocations.get(i).y;
+					int radius2 = (oldx - MainFrame.eyeLoc.x)*(oldx - MainFrame.eyeLoc.x) + (oldy - MainFrame.eyeLoc.y)*(oldy - MainFrame.eyeLoc.y);
+					if(radius2 < 200){
+						MainFrame.circles.remove(i);
+						MainFrame.eyeLocations.remove(i);
+						MainFrame.model.remove(i);
+						MainFrame.sEyeModes.remove(i);
+					}
+				}
+			}
+			MainFrame.circles.add(MainFrame.cirLoc);
+			MainFrame.eyeLocations.add(MainFrame.eyeLoc);
+			
+			String sEyeMode;
+			if (iEyeMode==1) sEyeMode = "Red";
+			else if (iEyeMode==2) sEyeMode = "Green";
+			else sEyeMode = "White";
+			MainFrame.sEyeModes.add(sEyeMode);
+			MainFrame.model.addElement(sEyeMode + ": x = " + MainFrame.eyeLoc.x + ";  y = " + MainFrame.eyeLoc.y);
+			MainFrame.originalImage.setCircle(MainFrame.circles, true, true, MainFrame.sEyeModes);
+			MainFrame.originalImage.repaint();
 			
 		}else if (MainFrame.pickColor == true && MainFrame.fromImage.isSelected()) {
 			int rgb = MainFrame.imgOriginal.getRGB(e.getX() - MainFrame.offsetX, e.getY() - MainFrame.offsetY);

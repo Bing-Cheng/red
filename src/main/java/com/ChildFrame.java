@@ -40,6 +40,7 @@ public class ChildFrame {
 	static final int GAP =10;
 	static final int PATCHSIZE = 16;
 	static final float PI = (float)3.14;
+	public Circle circle;
 	private void initUI() { 
 		f = new JFrame("Redeye Reduction");
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -150,7 +151,7 @@ public class ChildFrame {
 		int y =15;
 		int gridx = 3;
 		int gridy = 2;
-		Circle circle = new Circle(x,y,1);
+		circle = new Circle(x,y,1);
 		
 		BufferedImage eyePatchSmoothed = lowPassFilter(eyePatch, comp);
 		int[] shift = new int[3];
@@ -162,7 +163,7 @@ public class ChildFrame {
 			circle.fx += (float)shift[1];
 			circle.iy += shift[2];
 			circle.fy += (float)shift[2];
-			System.out.println("shift[0]="+shift[0]+" shift[1]="+shift[1]+" shift[2]="+shift[2]);
+			//System.out.println("shift[0]="+shift[0]+" shift[1]="+shift[1]+" shift[2]="+shift[2]);
 		}
 		//System.out.println("circle.ir="+circle.ir + " circle.fr"+circle.fr);
 		boolean overlay = true;
@@ -194,11 +195,23 @@ public class ChildFrame {
 			while(theta<2*PI){
 				cx = (int)Math.round((double)radius * Math.cos(theta));
 				cy = (int)Math.round((double)radius * Math.sin(theta));
-				fI = Util.getPixelColor(eyePatch, x+cx, y+cy, ColorComponents.VALUE);
+				int dx = x + cx;
+				int dy = y + cy;
+				if (dx<0) dx=0;
+				if (dx>PATCHSIZE*2-1) dx=PATCHSIZE*2-1;
+				if (dy<0) dy=0;
+				if (dy>PATCHSIZE*2-1) dy=PATCHSIZE*2-1;
+				fI = Util.getPixelColor(eyePatch, dx, dy, ColorComponents.VALUE);
 				//System.out.println("fI="+fI+" theta="+theta+" cx="+cx+" cy="+cy);
 				if (Math.abs(fI - regMean) > var *scale){
 					stop = true;
-					float fI180 = Util.getPixelColor(eyePatch, x-cx, y-cy, ColorComponents.VALUE);
+					dx = x - cx;
+					dy = y - cy;
+					if (dx<0) dx=0;
+					if (dx>PATCHSIZE*2-1) dx=PATCHSIZE*2-1;
+					if (dy<0) dy=0;
+					if (dy>PATCHSIZE*2-1) dy=PATCHSIZE*2-1;
+					float fI180 = Util.getPixelColor(eyePatch, dx, dy, ColorComponents.VALUE);
 					if((Math.abs(fI180 - regMean) > var *scale) && (Math.signum(fI-regMean)==Math.signum(fI180-regMean))){
 						shift[0] = 1;
 					}else if(Math.abs(cx)>Math.abs(cy)){
@@ -240,7 +253,7 @@ public class ChildFrame {
 					}
 				}
 				int iI = Math.round(fI*255/9);
-				System.out.println("fI="+fI+" iI="+iI);
+				//System.out.println("fI="+fI+" iI="+iI);
 				Color newColor = new Color(iI,iI,iI);
 				int newIntColor = newColor.getRGB();
 				eyePatchSmoothed.setRGB(i, j, newIntColor);
@@ -303,7 +316,7 @@ public class ChildFrame {
 	}
 	ChildFrame() {
 		initUI();
-		f.setVisible(true);
+	//	f.setVisible(true);
 	}
 
 }
