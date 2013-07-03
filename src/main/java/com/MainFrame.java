@@ -36,9 +36,9 @@ public class MainFrame {
 	static JButton regionGrowButton;
 	static JButton compareImageButton;
 	static JLabel colorLabel;
-	static Boolean pickEye;
-	static Boolean pickColor;
-	static Boolean moveImage;
+	static boolean pickEye;
+	static boolean pickColor;
+	static boolean moveImage;
 	static JFrame f;
 	static GroupLayout layout;
 	static JList eyeLocList;
@@ -61,13 +61,13 @@ public class MainFrame {
 	static HistogramWND greenHist;
 	static HistogramWND blueHist;
 	static ArrayList<EyeLocation> eyeLocations;
-	static Boolean locPicked;
+	static boolean locPicked;
 	static EyeLocation eyeLoc;
 	static Color pickedColor;
 	static JPanel infoPanel;
-	static Boolean saveOn;
+	static boolean saveOn;
 	static Point regionGrowLoc;
-	static Boolean regionGrowOn;
+	static boolean regionGrowOn;
 	static ChildFrame child;
 	private void initParams() { 
 		locPicked = false;

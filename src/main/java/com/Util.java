@@ -1,5 +1,8 @@
 package com;
 
+import java.awt.image.BufferedImage;
+
+
 public class Util {
 
 	public static int[] HSV2RGB(float h, float s, float v )
@@ -100,5 +103,32 @@ public class Util {
 	
 	    return new float[]{h,s,v};
 	}
-
+	enum ColorComponents{
+		RED, GREEN, BLUE, HUE, SATUATION, VALUE
+	}
+	static float getPixelColor(BufferedImage eyePatch, int x, int y, ColorComponents comp) {
+		int intColor = eyePatch.getRGB(x, y);
+		int b = intColor & 0x000000FF;
+		int g = (intColor & 0x0000FF00) >> 8;
+		int r = (intColor & 0x00FF0000) >> 16;
+		float[] hsv = Util.RGB2HSV(r,g,b);
+		float fRe =0;				
+		switch(comp){
+			case RED: fRe = (float)r/(float)256.0;
+			break;
+			case GREEN: fRe = (float)g/(float)256.0;
+			break;
+			case BLUE: fRe = (float)b/(float)256.0;
+			break;
+			case HUE: fRe = hsv[0];
+			break;
+			case SATUATION: fRe = hsv[1];
+			break;
+			case VALUE: fRe = hsv[2];
+			break;
+			default: fRe = hsv[2];
+			break;
+		}
+		return fRe;
+	}
 }

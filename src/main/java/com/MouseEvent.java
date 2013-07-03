@@ -10,6 +10,7 @@ public class MouseEvent implements MouseListener {
 		System.out.println("mouseClicked");
 		if (MainFrame.regionGrowOn){
 			MainFrame.child.drawRegion(new Point(e.getX(),e.getY()));
+			
 		}else if (MainFrame.pickColor == true && MainFrame.fromImage.isSelected()) {
 			int rgb = MainFrame.imgOriginal.getRGB(e.getX() - MainFrame.offsetX, e.getY() - MainFrame.offsetY);
 			Color bg = new Color(rgb);
@@ -40,7 +41,7 @@ public class MouseEvent implements MouseListener {
 		if (MainFrame.pickEye){
 			MainFrame.model.addElement("x = " + MainFrame.eyeLoc.x + ";  y = " + MainFrame.eyeLoc.y + ";  w = " + MainFrame.eyeLoc.width + ";  h = " + MainFrame.eyeLoc.height);
 			if (MainFrame.eyeLoc.width>0 && MainFrame.eyeLoc.height >0){
-				int scale = 1000;
+				int histScale = 1000;
 				if (MainFrame.hsvHist.isSelected()){
 				int[] hHist = new int[128];
 				int[] sHist = new int[128];
@@ -65,9 +66,9 @@ public class MouseEvent implements MouseListener {
 				for(int k = 0; k <128; k++)
 				{
 					HistPointsX[k] = k;
-					hHist[k] = scale * hHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
-					sHist[k] = scale * sHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
-					vHist[k] = scale * vHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+					hHist[k] = histScale * hHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+					sHist[k] = histScale * sHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+					vHist[k] = histScale * vHist[k]/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
 
 				}
 				MainFrame.redHist.drawHist(HistPointsX,hHist);
@@ -99,9 +100,9 @@ public class MouseEvent implements MouseListener {
 					for(int k = 0; k <128; k++)
 					{
 						HistPointsX[k] = k;
-						rHistPointsY[k] = scale * (rHist[2*k]+rHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
-						gHistPointsY[k] = scale * (gHist[2*k]+gHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
-						bHistPointsY[k] = scale * (bHist[2*k]+bHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+						rHistPointsY[k] = histScale * (rHist[2*k]+rHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+						gHistPointsY[k] = histScale * (gHist[2*k]+gHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
+						bHistPointsY[k] = histScale * (bHist[2*k]+bHist[2*k+1])/(MainFrame.eyeLoc.width*MainFrame.eyeLoc.height);
 
 					}
 					MainFrame.redHist.drawHist(HistPointsX,rHistPointsY);

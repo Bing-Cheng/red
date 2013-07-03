@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 import com.EyeProcWND;
+import com.Util.ColorComponents;
 
 public class ChildFrame {
 
@@ -35,10 +36,10 @@ public class ChildFrame {
 	static JCheckBox checkBox;
 
 	static EyeProcWND processedImage;
-	static int zoom = 4;
-	static int gap =10;
-	static int pSize = 16;
-
+	static final int ZOOM = 4;
+	static final int GAP =10;
+	static final int PATCHSIZE = 16;
+	static final float PI = (float)3.14;
 	private void initUI() { 
 		f = new JFrame("Redeye Reduction");
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -50,7 +51,7 @@ public class ChildFrame {
 		
 		checkBox = new JCheckBox("");
 
-		textField = new JTextField("0.2");
+		textField = new JTextField("1");
 		experiment1 = new JRadioButton("1");
 		experiment2 = new JRadioButton("2");
 		experiment3 = new JRadioButton("3");
@@ -95,183 +96,207 @@ public class ChildFrame {
 	}//init UI
 
 	public void drawRegion(Point loc) {
-		BufferedImage eyePatch = new BufferedImage(pSize*2, pSize*2, BufferedImage.TYPE_INT_RGB);
+		BufferedImage eyePatch = new BufferedImage(PATCHSIZE*2, PATCHSIZE*2, BufferedImage.TYPE_INT_RGB);
 		for(int i = 0; i < MainFrame.originalImage.getWidth(); i++){
 			for(int j = 0; j < MainFrame.originalImage.getHeight(); j++){
-				if ((i>=loc.x-pSize && i<loc.x+pSize) &&(j>=loc.y-pSize && j<loc.y+pSize) ){
+				if ((i>=loc.x-PATCHSIZE && i<loc.x+PATCHSIZE) &&(j>=loc.y-PATCHSIZE && j<loc.y+PATCHSIZE) ){
 					int intColor = MainFrame.imgOriginal.getRGB(i, j);
 					int b = intColor & 0x000000FF;
 					int g = (intColor & 0x0000FF00) >> 8;
 					int r = (intColor & 0x00FF0000) >> 16;
-			eyePatch.setRGB(i-loc.x+pSize, j-loc.y+pSize, intColor);
+			eyePatch.setRGB(i-loc.x+PATCHSIZE, j-loc.y+PATCHSIZE, intColor);
 			float[] hsv = Util.RGB2HSV(r, g, b);
-					for(int iz = 0; iz < zoom; iz++){
-						for(int jz = 0; jz < zoom; jz++){
-							int x1 = gap + (i-loc.x+pSize)*zoom + iz;
-							int y1 = gap + (j-loc.y+pSize)*zoom + jz;
+					for(int iz = 0; iz < ZOOM; iz++){
+						for(int jz = 0; jz < ZOOM; jz++){
+							int x1 = GAP + (i-loc.x+PATCHSIZE)*ZOOM + iz;
+							int y1 = GAP + (j-loc.y+PATCHSIZE)*ZOOM + jz;
 							imgRegion.setRGB(x1,y1,intColor);
 							Color newColor = new Color(r,r,r);
 							int newIntColor = newColor.getRGB();	
-							imgRegion.setRGB(gap+x1+zoom*pSize*2,y1,newIntColor);
+							imgRegion.setRGB(GAP+x1+ZOOM*PATCHSIZE*2,y1,newIntColor);
 							newColor = new Color(g,g,g);
 							newIntColor = newColor.getRGB();
-							imgRegion.setRGB(x1+2*(gap+zoom*pSize*2),y1,newIntColor);
+							imgRegion.setRGB(x1+2*(GAP+ZOOM*PATCHSIZE*2),y1,newIntColor);
 							newColor = new Color(b,b,b);
 							newIntColor = newColor.getRGB();
-							imgRegion.setRGB(x1+3*(gap+zoom*pSize*2),y1,newIntColor);
+							imgRegion.setRGB(x1+3*(GAP+ZOOM*PATCHSIZE*2),y1,newIntColor);
 							
-							int y2 = y1 + gap+zoom*pSize*2;
+							int y2 = y1 + GAP+ZOOM*PATCHSIZE*2;
 							
 							int iH = Math.round(hsv[0]*255);
 							newColor = new Color(iH,iH,iH);
 							newIntColor = newColor.getRGB();
-							imgRegion.setRGB(gap+x1+zoom*pSize*2,y2,newIntColor);
+							imgRegion.setRGB(GAP+x1+ZOOM*PATCHSIZE*2,y2,newIntColor);
 							int iS= Math.round(hsv[1]*255);
 							newColor = new Color(iS,iS,iS);
 							newIntColor = newColor.getRGB();
-							imgRegion.setRGB(x1+2*(gap+zoom*pSize*2),y2,newIntColor);
+							imgRegion.setRGB(x1+2*(GAP+ZOOM*PATCHSIZE*2),y2,newIntColor);
 							int iV= Math.round(hsv[2]*255);
 							newColor = new Color(iV,iV,iV);
 							newIntColor = newColor.getRGB();
-							imgRegion.setRGB(x1+3*(gap+zoom*pSize*2),y2,newIntColor);
+							imgRegion.setRGB(x1+3*(GAP+ZOOM*PATCHSIZE*2),y2,newIntColor);
 						}//jz
 					}//iz
 				}//if
 			}//j
 		}//i
-		grow(eyePatch);
+		grow(eyePatch, ColorComponents.VALUE);
 		processedImage.setImage(imgRegion, false);
 		processedImage.repaint();
 	}
-	void grow(BufferedImage eyePatch){//regiongrowing
-		Boolean[][] J = new Boolean[32][32];
-		float maxDist = Float.parseFloat(textField.getText());
-		float pixDist = (float)0.0;
+	void grow(BufferedImage eyePatch, ColorComponents comp){//regiongrowing
+
 		int x= 15;
 		int y =15;
-		J[x][y]=true;
-		int pos=0;
-		ArrayList<Pixel> pixs = new ArrayList<Pixel>();
-		int intColor;
-		float fI = getPixelColor(eyePatch, x, y, ColorComponents.VALUE);
-		float pMin = 1;
-		int index = 0;
-		float regMean;
-		for(int i = 0;i<32;i++){
-			for(int j=0;j<32;j++){
-				J[i][j]=false;
-			}
+		int gridx = 3;
+		int gridy = 2;
+		Circle circle = new Circle(x,y,1);
+		
+		BufferedImage eyePatchSmoothed = lowPassFilter(eyePatch, comp);
+		int[] shift = new int[3];
+		shift[0]=0;
+		shift = expend(eyePatchSmoothed, circle);
+		while(shift[0]==0&&(!(shift[1]==0&&shift[2]==0))){
+			shift = expend(eyePatchSmoothed, circle);
+			circle.ix += shift[1];
+			circle.fx += (float)shift[1];
+			circle.iy += shift[2];
+			circle.fy += (float)shift[2];
+			System.out.println("shift[0]="+shift[0]+" shift[1]="+shift[1]+" shift[2]="+shift[2]);
 		}
-		pixs.add(new Pixel(x,y,fI));
-		regMean = fI;
-		int regSize = 0;
-		while(pixDist<maxDist){
-			if(x>0 && x<pSize*2-1 && y>0 && y<pSize*2-1){
-				System.out.println("x="+x+" y="+y+" J="+J[x-1][y]+" pos="+pos+ " pixDist="+pixDist + " maxDist="+maxDist);
-			if (!J[x-1][y]){
-				fI = getPixelColor(eyePatch, x-1, y, ColorComponents.VALUE);
-				pos++;
-				pixs.add(new Pixel(x-1,y,fI));
-				J[x-1][y] = true;
-			}
-			if (!J[x+1][y]){
-				fI = getPixelColor(eyePatch, x+1, y, ColorComponents.VALUE);
-				pos++;
-				pixs.add(new Pixel(x+1,y,fI));
-				J[x+1][y] = true;
-			}
-			if (!J[x][y-1]){
-				fI = getPixelColor(eyePatch, x, y-1, ColorComponents.VALUE);
-				pos++;
-				pixs.add(new Pixel(x,y-1,fI));
-				J[x][y-1] = true;
-			}
-			if (!J[x][y+1]){
-				fI = getPixelColor(eyePatch, x, y+1, ColorComponents.VALUE);
-				pos++;
-				pixs.add(new Pixel(x,y+1,fI));
-				J[x][y+1] = true;
-			}
-			}
-			pMin = (float)1.0;
-			for(int i = 0; i< pos; i++){
-				if(pixs.get(i).I<pMin){
-					pMin = pixs.get(i).I;
-					index = i;
-					pixDist = Math.abs(pixs.get(i).I - regMean);
-				}
-			}//for i
-			regSize++;
-			regMean = (regMean*regSize + pixs.get(index).I)/(regSize+1);
-			x = pixs.get(index).x;
-			y = pixs.get(index).y;
-			pixs.set(index,pixs.get(pos));
-			pixs.remove(pos);
-			pos--;
-			if(pos==0) break;
-		}//while
-		for(int i = 0; i< pSize*2; i++){
-			for(int j = 0; j< pSize*2; j++){
-				intColor = eyePatch.getRGB(i, j);
-				int b = intColor & 0x000000FF;
-				Color newColor = new Color(b,b,b);
-				int newIntColor = newColor.getRGB();
-				Color newColor2 = new Color(255,0,0);
-				int newIntColor2 = newColor2.getRGB();
-
-				if(J[i][j]){
-					for(int iz = 0; iz < zoom; iz++){
-						for(int jz = 0; jz < zoom; jz++){
-							int x1 = gap + i*zoom + iz;
-							int y1 = gap + j*zoom + jz;
-							int y2 = y1 + 2*(gap+zoom*pSize*2);
-							imgRegion.setRGB(x1,y2,newIntColor2);
-							
-						}//jz
-					}//iz
-				}else{
-					for(int iz = 0; iz < zoom; iz++){
-						for(int jz = 0; jz < zoom; jz++){
-							int x1 = gap + i*zoom + iz;
-							int y1 = gap + j*zoom + jz;
-							int y2 = y1 + 2*(gap+zoom*pSize*2);
-							imgRegion.setRGB(x1,y2,newIntColor);
-							
-						}//jz
-					}//iz
-				}
-			}//j
-		}//i
+		//System.out.println("circle.ir="+circle.ir + " circle.fr"+circle.fr);
+		boolean overlay = true;
+		addPatch(eyePatchSmoothed, circle, gridx, gridy, overlay);
+		addMask(circle, gridx, gridy+1);
 		
 	}//grow
-	enum ColorComponents{
-		RED, GREEN, BLUE, HUE, SATUATION, VALUE
+	private int[] expend(BufferedImage eyePatch, Circle circle) {
+		float scale =  Float.parseFloat(textField.getText());
+		int[] shift = new int[3];
+		shift[0]=0;
+		int cx=0;
+		int cy=0;
+		int x = circle.ix;
+		int y = circle.iy;
+		int radius = circle.ir;
+		//System.out.println("x="+x+" y="+y+" r="+radius);
+		float fI = Util.getPixelColor(eyePatch, x, y, ColorComponents.VALUE);
+		float regMean, var;
+		regMean = circle.getMean(eyePatch, ColorComponents.VALUE);
+		var = circle.getVariance(eyePatch, ColorComponents.VALUE);
+		//System.out.println("regMean="+regMean+" var="+var+" r="+radius);
+		boolean stop = false;
+		
+		while((!stop)&&(radius<10)){
+			double theta = 0;
+			double delta = 1/(double)radius;
+			ArrayList<Integer> outsides = new ArrayList<Integer>();
+			while(theta<2*PI){
+				cx = (int)Math.round((double)radius * Math.cos(theta));
+				cy = (int)Math.round((double)radius * Math.sin(theta));
+				fI = Util.getPixelColor(eyePatch, x+cx, y+cy, ColorComponents.VALUE);
+				//System.out.println("fI="+fI+" theta="+theta+" cx="+cx+" cy="+cy);
+				if (Math.abs(fI - regMean) > var *scale){
+					stop = true;
+					float fI180 = Util.getPixelColor(eyePatch, x-cx, y-cy, ColorComponents.VALUE);
+					if((Math.abs(fI180 - regMean) > var *scale) && (Math.signum(fI-regMean)==Math.signum(fI180-regMean))){
+						shift[0] = 1;
+					}else if(Math.abs(cx)>Math.abs(cy)){
+						shift[1] = -cx/Math.abs(cx);
+						shift[2] = -Math.round(cy/Math.abs(cx));
+					}else{
+						shift[1] = -Math.round(cx/Math.abs(cy));;
+						shift[2] = -cy/Math.abs(cy);;
+					}
+					break;
+				}
+				
+				theta += delta;
+			}//theta
+			if(shift[1]==0&&shift[2]==0)
+			{
+				int tmp=1;
+				int tmp2= tmp;
+			}
+			radius++;
+			circle.ir = radius;
+			circle.fr = (float)radius;
+			regMean = circle.getMean(eyePatch, ColorComponents.VALUE);
+			var = circle.getVariance(eyePatch, ColorComponents.VALUE);
+			//System.out.println("regMean="+regMean+" var="+var+" r="+radius);
+		}//radius
+		return shift;
 	}
-	private float getPixelColor(BufferedImage eyePatch, int x, int y, ColorComponents comp) {
-		int intColor = eyePatch.getRGB(x, y);
-		int b = intColor & 0x000000FF;
-		int g = (intColor & 0x0000FF00) >> 8;
-		int r = (intColor & 0x00FF0000) >> 16;
-		float[] hsv = Util.RGB2HSV(r,g,b);
-		float fRe =0;				
-		switch(comp){
-			case RED: fRe = (float)r/(float)256.0;
-			break;
-			case GREEN: fRe = (float)g/(float)256.0;
-			break;
-			case BLUE: fRe = (float)b/(float)256.0;
-			break;
-			case HUE: fRe = hsv[0];
-			break;
-			case SATUATION: fRe = hsv[1];
-			break;
-			case VALUE: fRe = hsv[2];
-			break;
-			default: fRe = hsv[2];
-			break;
+	private BufferedImage lowPassFilter(BufferedImage eyePatch, ColorComponents comp){
+		BufferedImage eyePatchSmoothed = new BufferedImage(PATCHSIZE*2, PATCHSIZE*2, BufferedImage.TYPE_INT_RGB);
+		
+		for(int i = 1; i< PATCHSIZE*2-1; i++){
+			for(int j = 1; j< PATCHSIZE*2-1; j++){
+				float fI=0;
+				for (int ii = -1; ii < 2; ii++){
+					for (int jj = -1; jj <2; jj++){
+						fI += Util.getPixelColor(eyePatch, i+ii, j+jj, comp);
+						
+					}
+				}
+				int iI = Math.round(fI*255/9);
+				System.out.println("fI="+fI+" iI="+iI);
+				Color newColor = new Color(iI,iI,iI);
+				int newIntColor = newColor.getRGB();
+				eyePatchSmoothed.setRGB(i, j, newIntColor);
+			}//j
+		}//i
+		return eyePatchSmoothed;
+	}
+
+	private void addPatch(BufferedImage eyePatch, Circle circle, int gridx, int gridy, boolean overlay) {
+		for(int i = 0; i< PATCHSIZE*2; i++){
+			for(int j = 0; j< PATCHSIZE*2; j++){
+				float fI = Util.getPixelColor(eyePatch, i, j, ColorComponents.VALUE);
+				int iI = Math.round(fI*255);
+				Color newColor = new Color(iI,iI,iI);
+				setPixelColor(gridx, gridy, i, j, newColor);
+			}//j
+		}//i
+		if (overlay){
+			Color boundaryColor = new Color(255,0,0);
+			ArrayList<Pixel> boundary = circle.getBoundary();
+			for (int i = 0; i < boundary.size(); i++) {
+				Pixel pix = boundary.get(i);
+				setPixelColor(gridx, gridy, pix.getX(), pix.getY(), boundaryColor);
+				//System.out.println("pix.getX()="+pix.getX()+" pix.getY()="+pix.getY()+" boundary"+boundary.size());
+			}
 		}
-		return fRe;
 	}
+	private void addMask(Circle circle, int gridx, int gridy) {
+		boolean[][] mask = circle.getMask();
+		for(int i = 0; i< PATCHSIZE*2; i++){
+			for(int j = 0; j< PATCHSIZE*2; j++){
+				if(mask[i][j])
+					setPixelColor(gridx, gridy, i, j, new Color(255,0,0));
+				else
+					setPixelColor(gridx, gridy, i, j, new Color(110,150,150));
+			}//j
+		}//i
+	}
+
+	private void setPixelColor(int gridx, int gridy, int i, int j,
+			Color newColor) {
+		int newIntColor = newColor.getRGB();
+		for(int iz = 0; iz < ZOOM; iz++){
+			for(int jz = 0; jz < ZOOM; jz++){
+				int x1 = GAP + i*ZOOM + iz;
+				int y1 = GAP + j*ZOOM + jz;
+				int x2 = x1 + gridx*(GAP+ZOOM*PATCHSIZE*2);
+				int y2 = y1 + gridy*(GAP+ZOOM*PATCHSIZE*2);
+				imgRegion.setRGB(x2,y2,newIntColor);
+			}//jz
+		}//iz
+	}
+
+	
+
+	
 	void Closeup() {
 		f.setVisible(false);
 		f.dispose();

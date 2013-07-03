@@ -18,7 +18,7 @@ public class EyeProcWND extends Component {
 	BufferedImage img;
 	int offsetX;
 	int offsetY;
-	Boolean overlay = false;
+	boolean overlay = false;
 	ArrayList<EyeLocation> eyeLocations;
 	public void paint(Graphics g) {
 		g.drawImage(img, offsetX, offsetY, null);

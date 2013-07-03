@@ -17,7 +17,7 @@ public class HistogramWND extends JLabel {
 	int nPoints;
 	int max;
 	Color color;
-	Boolean drawOn;
+	boolean drawOn;
 	Dimension windowSize;
 	public void paint(Graphics g) {
 
