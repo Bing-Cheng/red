@@ -16,6 +16,7 @@ import java.awt.event.*;
 import com.EyeProcWND;
 import com.AlogrithmEvent.ColorEyeMode;
 
+
 public class MainFrame {
 	static BufferedImage imgOriginal;
 	static BufferedImage imgProcessed; 
@@ -73,6 +74,7 @@ public class MainFrame {
 	static Point regionGrowLoc;
 	static boolean regionGrowOn;
 	static ChildFrame child;
+	static float cnt =0;
 	private void initParams() { 
 		locPicked = false;
 		saveOn = false;
@@ -426,195 +428,40 @@ public class MainFrame {
 		processAllButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				imgProcessed= new BufferedImage(imgOriginal.getWidth(), imgOriginal.getHeight(), imgOriginal.getType());
-				imgProcessed.setData(imgOriginal.getData());
-				for(int itr = 0; itr < eyeLocations.size(); itr++){
-					EyeLocation eye =eyeLocations.get(itr);
-					if(regionGrowOn){
-					
-					Circle circle = circles.get(itr);
-					String sEyeMode = sEyeModes.get(itr);
-					boolean[][] mask = circle.getMask();
-					int sum =0;
-					int mSize = 0;
-					for(int i = 0; i < ChildFrame.PATCHSIZE*2; i++){
-						for(int j = 0; j < ChildFrame.PATCHSIZE*2; j++){
-							if(mask[i][j]){
-								int intColor = imgOriginal.getRGB(eye.x-ChildFrame.PATCHSIZE+i, eye.y-ChildFrame.PATCHSIZE+j);
+			//	imgProcessed.setData(imgOriginal.getData());
+
+					for(int i = 0; i < imgOriginal.getWidth(); i++){
+						for(int j = 0; j < imgOriginal.getHeight(); j++){
+							
+								int intColor = imgOriginal.getRGB(i, j);
 								int b = intColor & 0x000000FF;
 								int g = (intColor & 0x0000FF00) >> 8;
 								int r = (intColor & 0x00FF0000) >> 16;
-								sum = sum + r + g +b;
-								mSize++;
-							}
+								float[] hsv;
+									hsv = Util.RGB2HSV(r, g, b);
+									float h = hsv[2]-cnt;
+									if (h<0) h= h+1;
+									float s = hsv[1];
+									float v = hsv[0];//+(float)0.5;
+		//							System.out.println("v="+v+"; hsv[0]"+hsv[0]+" ; cnt="+cnt);	
+									if (v>1) v= v-1;
+									int[] rgb = Util.HSV2RGB(h,s,v);
+									
+								int	rNew = rgb[0];
+								int	gNew = rgb[1];
+								int	bNew = rgb[2];
+/*								System.out.println("r="+r+"; g="+g+" ; b="+b);	
+								System.out.println("h="+h+"; s="+s+" ; v="+v);	
+			System.out.println("rNew="+rNew+"; gNew="+gNew+" ; bNew="+bNew);*/				
+								Color newColor = new Color(rNew,gNew,bNew);
+								int newIntColor = newColor.getRGB();	
+								imgProcessed.setRGB(i,j,newIntColor);
+						
 						}
 					}
-					int mean = sum / mSize;	
-					int rNew=0, gNew=0, bNew=0;	
-					for(int i = 0; i < ChildFrame.PATCHSIZE*2; i++){
-						for(int j = 0; j < ChildFrame.PATCHSIZE*2; j++){
-							if(mask[i][j]){
-								int ii = eye.x-ChildFrame.PATCHSIZE+i;
-								int jj = eye.y-ChildFrame.PATCHSIZE+j;
-							int intColor = imgOriginal.getRGB(ii,jj );
-							int b = intColor & 0x000000FF;
-							int g = (intColor & 0x0000FF00) >> 8;
-							int r = (intColor & 0x00FF0000) >> 16;
-							float[] hsv;
-							if (sEyeMode=="Red"){
-								if((r > 1.8*g) && (r>b) && (b>10) && (r>40)){
-									rNew = Math.round((g+b)/2);
-									gNew = g;
-									bNew = b;
-								}else{
-									rNew = r;
-									gNew = g;
-									bNew = b;
-								}
-							}else{
-								hsv = Util.RGB2HSV(r, g, b);
-								float h = hsv[0];
-								float s = 0;//hsv[1]/2;
-								float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
-								int[] rgb = Util.HSV2RGB(h,s,v);
-								rNew = rgb[0];
-								gNew = rgb[1];
-								bNew = rgb[2];
-							}
-							Color newColor = new Color(rNew,gNew,bNew);
-							int newIntColor = newColor.getRGB();	
-							imgProcessed.setRGB(ii,jj,newIntColor);
-							}//if mask
-						}//j
-					}//i
-					}//region Grow
-					else{
-						String sEyeMode = sEyeModes.get(itr);
-						ColorEyeMode eyeMode; 
-						if (sEyeMode == "Red") eyeMode = ColorEyeMode.RED;
-						else if (sEyeMode == "Green") eyeMode = ColorEyeMode.GREEN;
-						else if (sEyeMode == "White") eyeMode = ColorEyeMode.WHITE;
-						else eyeMode = ColorEyeMode.ELSE;
-						
-						int sum =0;
-						for(int i = eye.x; i < eye.x + eye.width; i++){
-							for(int j = eye.y; j < eye.y + eye.height; j++){
-								int intColor = MainFrame.imgOriginal.getRGB(i, j);
-								int b = intColor & 0x000000FF;
-								int g = (intColor & 0x0000FF00) >> 8;
-							int r = (intColor & 0x00FF0000) >> 16;
-							sum = sum + r + g +b;
-							}
-						}
-						int mean = sum / (eye.width * eye.height);	
-						for(int i = eye.x; i < eye.x + eye.width; i++){
-							for(int j = eye.y; j < eye.y + eye.height; j++){
-								int intColor = MainFrame.imgOriginal.getRGB(i, j);
-								int b = intColor & 0x000000FF;
-								int g = (intColor & 0x0000FF00) >> 8;
-							int r = (intColor & 0x00FF0000) >> 16;
-							int rNew=0, gNew=0, bNew=0;	
-							Color newColor;
-							int newIntColor; 
-							float[] hsv;
-							switch (eyeMode){
-							case RED:
-								if(MainFrame.experiment1.isSelected()){
-									if((r > 1.8*g) && (r>b) && (b>10) && (r>40)){
-										rNew = Math.round((g+b)/2);
-										gNew = g;
-										bNew = b;
-									}else{
-										rNew = r;
-										gNew = g;
-										bNew = b;
-									}
-									int newIntColor1 = (rNew << 16) + (intColor&0xFF00FFFF);
-									MainFrame.imgProcessed.setRGB(i,j,newIntColor1);
-								}else if(MainFrame.experiment2.isSelected()){ 
-									float rMin= (float)0.9;
-									float rMax= (float)1.0;
-									hsv = Util.RGB2HSV(r, g, b);
-									if (hsv[0] > rMin){
-										rNew = Math.round((g+b)/2);
-										gNew = g;
-										bNew = b;
-									}else{ 
-										rNew = r;
-										gNew = g;
-										bNew = b;
-									}
-								}else{
-									float rMin= (float)0.05;
-									float rMax= (float)0.9;
-									hsv = Util.RGB2HSV(r, g, b);
-									if (hsv[0] < rMin || hsv[0] > rMax){
-										float h = hsv[0];
-										float s = 0;//hsv[1]/2;
-										float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
-										int[] rgb = Util.HSV2RGB(h,s,v);
-										rNew = rgb[0];
-										gNew = rgb[1];
-										bNew = rgb[2];
-									}else{ 
-										gNew = g;
-										rNew = r;
-										bNew = b;
-									}
-								}
-								break;
-							case GREEN:
-								float gMin = (float)0.17;
-								float gMax = (float)0.50;
-
-								hsv = Util.RGB2HSV(r, g, b);
-								if (hsv[0] > gMin && hsv[0] < gMax){
-									//gNew = Math.round((r+b)/2);
-									float h = hsv[0];
-									float s = 0;//hsv[1]/2;
-									float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
-									int[] rgb = Util.HSV2RGB(h,s,v);
-									rNew = rgb[0];
-									gNew = rgb[1];
-									bNew = rgb[2];
-								}else{ 
-									gNew = g;
-									rNew = r;
-									bNew = b;
-								}
-								break;
-							case WHITE:
-								int vTh = 300;
-								int diffTh = 150;
-								float meanMul = (float)1.1;
-								int diff = Math.max(Math.max(r, g),b) - Math.min(Math.min(r, g),b);
-								hsv = Util.RGB2HSV(r, g, b);
-								if (((r + g + b) > vTh || (r + g + b) > meanMul*mean) && (diff<diffTh) ){
-									float h = hsv[0];
-									float s = 0;//hsv[1]/2;
-									float v = -(hsv[2]-(float)0.5)*(hsv[2]-(float)0.5) + (float)0.35;
-									int[] rgb = Util.HSV2RGB(h,s,v);
-									rNew = rgb[0];
-									gNew = rgb[1];
-									bNew = rgb[2];
-								}else{ 
-									gNew = g;
-									rNew = r;
-									bNew = b;
-								}
-							break;
-
-							default:
-
-								break;
-							}
-							newColor = new Color(rNew,gNew,bNew);
-							newIntColor = newColor.getRGB();	
-							imgProcessed.setRGB(i,j,newIntColor);
-
-							}//j
-						}//i
-					}//else region grow
-				}//iterator
+					cnt += 0.05;
+					if (cnt>1) cnt =0;
+					System.out.println("done");
 				processedImage.setImage(imgProcessed,false);
 				processedImage.repaint();
 				displayImages();	
@@ -775,6 +622,7 @@ public class MainFrame {
 		addEventHandler();
 		displayImages();
 		f.setVisible(true);
+
 	}
 
 }

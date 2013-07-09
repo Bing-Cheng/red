@@ -83,7 +83,7 @@ public class Util {
 	        s = delta / max;
 	     else {
 	        s = 0;
-	        h = -1;
+	        h = 0;
 	        return new float[]{h,s,v};
 	     }
 	
